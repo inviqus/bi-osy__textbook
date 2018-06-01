@@ -1,0 +1,34 @@
+\subsection{Obecné zadání}
+Ve všech následujících úlohách budeme vycházet z daných informací o OS:
+
+Na UNIXovém systému máme připojeny následující systémy souborů:
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ l|l|l|l }
+        \hline
+        Bod připojení & Disk & Typ systému souborů & Parametry připojení\\
+        \hline
+        / & /dev/sda1 & UFS & read/write, noatime\\
+        /home & /dev/sda2 & UFS & read/write, noatime\\
+        /fat1 & /dev/sdb1 & FAT32 & read/write\\
+        /fat2 & /dev/sdc1 & FAT32 & read/write\\
+        \hline
+    \end{tabular}
+\end{table} 
+
+Parametr atime znamená, že se u souborů/adresářů aktualizuje čas přístupu při každém přístupu. Parametr noatime znamená, že se u souborů/adresářů neaktualizuje čas přístupu.
+
+Systém souborů FAT32 nepoužívá informaci o přístupu, tedy atribut atime/noatime není použit.
+
+Sytém souborů UFS pracuje s i-nody, které mají 12 odkazů přímých a po jednom jednonásobném, dvojnásobném a trojnásobném nepřímém odkazu na datové bloky. Velikost datového bloku je 4 KiB, odkazy na datový blok jsou 64-bitové. Atributy i-nodu jsou: typ souboru, velikost souboru, čítač pevných linků, přístupová práva, vlastník a skupina, čas modifikace, čas přístupu, symbolický link se vždy zapisuje do datového bloku. Informace o volných objektech UFS (inodech a blocích) jsou uložené v bitové mapě na disku, která se při připojení systému souborů načetla do paměti.
+
+Systém souborů FAT pracuje s datovými bloky (clustery) o velikosti 4 KiB a odkazy na clustery jsou 64bitové.
+
+Předpokládejte, že obsah adresáře nepřesáhne velikost bloku 4 KiB. Dále předpokládejte, že v paměti jsou načtené pouze \textit{superbloky/boot sektory} jednotlivých připojených disků. Dále pro jednoduchost předpokládáme, že operace uspějí (cesty existují, soubory lze číst/zapisovat, je dostatek místa, všimněte si, že operace provádíme pod uživatelem root, tedy nemáme omezená na přístupová práva). Pro zpracovávaný soubor víte, že zobrazení by vypadalo takto:
+
+\begin{minted}{shell}
+# ls -l /usr/local/opt/
+-rw-rw-rw- 1 root root 21190268758 Aug 12 03:31 file.pdf
+\end{minted}
+
+V takové konfiguraci se budou provádět různé příkazy shellu. Uvažujte pouze efekt tohoto příkazu (tedy neuvažujte režii spojenou s vlastním natažením tohoto příkazu do paměti).

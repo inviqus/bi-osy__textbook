@@ -1,0 +1,47 @@
+\subsection{UFS - Odstranění souboru}
+
+\begin{minted}{shell}
+# rm -f /usr/local/opt/file.pdf
+\end{minted}
+
+Musíme načíst cestu k souboru.
+
+\begin{verbatim}
+read i-node  /
+read content /
+read i-node  /usr
+read content /usr
+read i-node  /usr/local
+read content /usr/local
+read i-node  /usr/local/opt
+read content /usr/local/opt
+\end{verbatim}
+
+Načteme i-node souboru, abychom mohli najít všechny bloky, které si soubor alokoval. Jelikož se nejedná jen o přímé odkazy (viz. analýza zadání - výpočet bloků pro soubor), tak musíme rovněž načíst všechny násobné odkazy na bloky.
+\begin{verbatim}
+read i-node /usr/local/opt/file.pdf
+read content /usr/local/opt/file.pdf    # 10126 krát
+\end{verbatim}
+
+Odstaníme všech 10126 bloků odkazů a 5173406 bloků dat. Odstraníme i-node souboru.
+\begin{verbatim}
+free content /usr/local/opt/file.pdf    # 5173406 krát
+free content /usr/local/opt/file.pdf    # 10126 krát
+free i-node /usr/local/opt/file.pdf
+\end{verbatim}
+
+Upravíme content složky, protože přišla o soubor, a i-node složky kvůli mtime.
+\begin{verbatim}
+write content /usr/local/opt
+write i-node /usr/local/opt
+\end{verbatim}
+
+\begin{itemize}
+    \item \textbf{Kolik i-nodů se musí načíst?} 5
+    \item \textbf{Kolik i-nodů se musí zapsat?} 1
+    \item \textbf{Kolik datových bloků se musí načíst?} 10130
+    (4 bloky složek, 10126 bloků nepřímých odkazů)
+    \item \textbf{Kolik datových bloků se musí zapsat?} 1
+    \item \textbf{Kolik operací musí být provedeno při alokování/uvolňování bloků a i-nodů? Každou operaci alokace/uvolnění bloku/i-node započtěte zvlášť.} 5183533
+    (5183532 bloků odkazů a dat souboru, 1 i-node souboru)
+\end{itemize}

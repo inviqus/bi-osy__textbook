@@ -1,0 +1,56 @@
+\subsection{UFS - Kopírování souboru}
+
+\begin{minted}{shell}
+# cp /usr/local/opt/file.pdf /usr/local/opt/folder/new.pdf
+\end{minted}
+
+Musíme načíst obě cesty k souborům.
+\begin{verbatim}
+read i-node  /
+read content /
+read i-node  /usr
+read content /usr
+read i-node  /usr/local
+read content /usr/local
+read i-node  /usr/local/opt
+read content /usr/local/opt
+\end{verbatim}
+
+Cílová cesta je pouhé pokračování původní, načteme pouze to, co zatím není v paměti.
+\begin{verbatim}
+read i-node  /usr/local/opt/folder
+read content /usr/local/opt/folder
+\end{verbatim}
+
+Musíme načíst i-node původního souboru, abychom mohli načíst datové bloky, které si soubor alokoval. Jelikož se nejedná jen o přímé odkazy (viz. analýza zadání - výpočet bloků pro soubor), tak musíme rovněž načíst všechny násobné odkazy na bloky - 10126 bloků odkazů a 5173406 bloků dat.
+\begin{verbatim}
+read i-node /usr/local/opt/file.pdf
+read content /usr/local/opt/file.pdf    # 10126 krát
+read content /usr/local/opt/file.pdf    # 5173406 krát
+\end{verbatim}
+
+Vytvoříme v file systemu nový soubor (vytvoříme i-node). Zkopírujeme všechny bloky odkazů a bloky dat.
+\begin{verbatim}
+write i-node /usr/local/opt/folder/new.pdf
+write content /usr/local/opt/folder/new.pdf    # 10126 krát
+write content /usr/local/opt/folder/new.pdf    # 5173406 krát
+\end{verbatim}
+
+Upravíme content složky, protože má nový soubor, a i-node složky kvůli mtime.
+\begin{verbatim}
+write content /usr/local/opt/folder
+write i-node /usr/local/opt/folder
+\end{verbatim}
+
+\begin{itemize}
+    \item \textbf{Kolik i-nodů se musí načíst?} 6 
+    (5 složek, 1 soubor)
+    \item \textbf{Kolik i-nodů se musí zapsat?} 2 
+    (1 nový soubor, 1 upravená složka)
+    \item \textbf{Kolik datových bloků se musí načíst?} 5183537
+    (5 bloků složek, 10126 bloků nepřímých odkazů, 5173406 bloků dat)
+    \item \textbf{Kolik datových bloků se musí zapsat?} 5183533
+    (1 upravená složka, 10126 bloků nepřímých odkazů, 5173406 bloků dat)
+    \item \textbf{Kolik operací musí být provedeno při alokování/uvolňování bloků a i-nodů? Každou operaci alokace/uvolnění bloku/i-node započtěte zvlášť.} 5183533
+    (1 i-node nového souboru, 10126 bloků nepřímých odkazů, 5173406 bloků dat)
+\end{itemize}

@@ -1,0 +1,53 @@
+\documentclass{article}
+% Packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{geometry}       % Geometrie stránky
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage[czech]{babel}   % Výchozí jazyk dokumentu
+\usepackage{xcolor}         % Používání barev
+\usepackage{minted}
+\usepackage{graphicx}
+
+\usemintedstyle{colorful}
+
+\geometry{
+    a4paper,
+    total={170mm,257mm},
+    left=20mm,
+    top=20mm,
+}
+
+% Všeobecné textové styly
+\setlength{\parindent}{0cm} % Odstup 2 a dalších paragrafů
+\setlength{\parskip}{0.5em} % Místo mezi paragrafy
+\renewcommand{\baselinestretch}{1.1}    % Line height
+
+% Barvy
+\definecolor{orang}{rgb}{245, 246, 250}
+ 
+\title{BI-OSY}
+\author{Sergey Dunaevskiy}
+\date{\today}
+
+\begin{document}
+
+% Title Page%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+\clearpage\maketitle
+\thispagestyle{empty}
+\tableofcontents
+\end{titlepage}
+
+% Body %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \begin{minted}{shell}\end{minted}
+
+% File System
+\input{filesystem/main.tex}
+% RAID
+% Deadlock
+
+
+\end{document}

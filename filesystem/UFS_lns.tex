@@ -1,0 +1,47 @@
+\subsection{UFS - Vytváření symlinku}
+
+\begin{minted}{shell}
+# ln -s /usr/local/opt/file.pdf /tmp/user/file.link
+\end{minted}
+
+Pro vytvoření symlinku nepotřebujeme pracovat s exitujícím souborem, stačí pouze jeho název a cesta\\ (\mintinline{shell}{/usr/local/opt/file.pdf}).
+Nejdřív musíme načíst celou cestu k \mintinline{shell}{/tmp/user/file.link} souboru (včetně \mintinline{shell}{/}, protože není načtený do paměti).
+
+\begin{verbatim}
+read i-node  /
+read content /
+read i-node  /tmp
+read content /tmp
+read i-node  /tmp/user
+read content /tmp/user
+\end{verbatim}
+
+Vytvoříme v file systemu nový soubor (vytvářím i-node). Jeho jediným datovým blokem, na který bude ukazovat jeden přímý odkaz, bude blok s názvem cílového souboru.
+\begin{verbatim}
+write i-node /tmp/user/file.link
+write content /tmp/user/file.link
+\end{verbatim}
+
+Změníme content parent složky (\mintinline{shell}{/tmp/user}), že ted obsahuje nový soubor. Protože jsme modifikovali složku, tak musíme upravit i-node složky kvůli údaji o poslední modifikaci prvku (mtime).
+\begin{verbatim}
+write content /tmp/user
+write i-node /tmp/user
+\end{verbatim}
+
+\begin{itemize}
+    \item 
+        \textbf{Kolik i-nodů se musí načíst?} 3 
+        - (\mintinline{shell}{read i-node}) - otevíráme složky
+    \item 
+        \textbf{Kolik i-nodů se musí zapsat?} 2 
+        - (\mintinline{shell}{write i-node}) jednou jsme vytvořili soubor a jednou upravili čas modifikace složky
+    \item 
+        \textbf{Kolik datových bloků se musí načíst?} 3 
+        - (\mintinline{shell}{read content}) otevíráme složky
+    \item
+        \textbf{Kolik datových bloků se musí zapsat?} 2
+        - (\mintinline{shell}{write content}) jednou jsme vytvářeli soubor a jednou přidali do složky
+    \item
+        \textbf{Kolik operací musí být provedeno při alokování/uvolňování bloků a i-nodů? Každou operaci alokace/uvolnění bloku/i-node započtěte zvlášť.} 2
+        - museli jsme vytvořit i-node pro nový soubor a pak pro něj alokovat jeden datový blok
+\end{itemize}

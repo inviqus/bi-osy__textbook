@@ -1,0 +1,48 @@
+\subsection{Analýza zadání}
+V následujících příkladech se mohou opakovat některé postupy, proto rovnou provedeme rozbor některých částí úlohy.
+
+\textbf{Informace ze zadání:}
+\begin{itemize}
+    \item Každý bod připojení je samostatný file system. Pokud bude probíhat přesouvání (\mintinline{bash}{mv file.pdf new.pdf}) mezi dvěma file systemy, tak se nejedná o pouhý přepis UFS i-nodů složek (viz. příklady), ale o plnohodnotné kopírování.
+    \item Každý i-node je složen z 12 odkazů přímých a po jednom jednonásobném, dvojnásobném a trojnásobném nepřímém odkazu (důležité kvůli rozdělování velkého souboru na datové bloky).
+    \item Velikost datového bloku je 4 KiB (musíme vědět kvůli rozdělení souboru do datových bloků), obsah adresáře nepřesáhne velikost bloku 4 KiB (při načítání obsahu složky budeme číst pouze jeden datový blok). Pokud by byl obsah adresáře 8 KiB, tak po přečtení i-node adresáře bychom museli číst dva datové bloky.
+    \item Do paměti jsou načtené pouze superbloky a boot sektory. To znamená, že v řešení budeme muset počítat s načtením kořenového adresáře (\mintinline{shell}|/|).
+    \item Jeden odkaz na datový blok zabírá 64bit.
+\end{itemize}
+
+\textbf{Všeobecná teorie (UFS):}
+\begin{itemize}
+    \item Každý prvek (složka, soubor, ...) se skládá z jednoho i-node a jednoho a více datových bloků. V i-node se uchovávají informace o prvku (čas poslední modifikace, přístupová práva, odkazy na datové bloky apod.).
+    \item Složka se z hlediska logické struktury ničím neliší od souboru (má vlastní i-node a datové bloky). V případě souboru v datových blocích se uchovávají data (třeba textové řetězce), v případě složek se uchovávají názvy souborů a jejich i-node atd.
+\end{itemize}
+
+\textbf{Výpočty:}
+
+\textbf{Kolik datových bloků zabírá soubor?}
+Velikost celého souboru je $21190268758B$. Jeden datový blok může uchovávat pouze $4KiB = 4096B$. Počet bloků pro uchovávání dat souboru je:
+$$ceil({21190268758 \over 4096}) = 5173406$$
+
+Tento počet datových bloků se musí rozmístit do násobných odkazů v i-node, protože se do přímých nevejde. Odkaz na jeden datový blok je 64bit, neboli ${64 \over 8} = 8B$. Počet přímých odkazů v jednonásobném bloku je roven:
+$${4096 \over 8} = 512$$
+
+Teoreticky soubor má následující strukturu:
+\begin{itemize}
+    \item 12 přímých odkazů
+    \item 1 jednonásobný (+ 1 datový blok) = 512 přímých
+    \item 1 dvojnásobný (+ 1 datový blok) = 512 jednonásobných (+ 512 datových bloků) = 262144 přímých
+    \item 1 trojnásobný (+ 1 datový blok) = 512 dvojnásobných (+ 512 datových bloků) = 262144 jednonásobných (+ 262144 datových bloků) = 134217728 přímých
+\end{itemize}
+
+Začneme je postupně zaplnovat, než vyčerpáme počet bloků potřebných pro náš soubor. Prioritně zaplníme přímé odkazy. Vytvořili jsme 12 bloků.
+$$5173406 - 12 = 5173394$$
+
+Jednonásobný datový blok uchovává 512 přímých odkazů a vyžaduje 1 datový blok navíc.
+$$5173394 - 512 = 5172881$$
+
+Dvojnásobný blok uchovává 262144 přímých odkazů a vyžaduje 513 datových bloků navíc.
+$$5172882 - (512 * 512) = 4910738$$
+
+Trojnásobný blok nemáme šanci celý zaplnit, spočítáme, kolik potřebujeme datových bloků navíc.
+Zbývající počet bloků zabere $ceil({4910738 \over 512}) = 9592$ jednonásobných odkazů. Jednonásobné odkazy zaberou $ceil({9592 \over 512}) = 19$ dvojnásobných odkazů. A dvojnásobné odkazy zaberou 1 trojnásobný.
+
+Celkový počet datových bloků (dat i odkazů), které zabírá daný soubor, je $1 + (1 + 512) + (1 + 19 + 9592) = 10126$.

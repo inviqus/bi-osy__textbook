@@ -1,0 +1,48 @@
+\subsection{UFS - Přesun souboru}
+
+\textit{\textbf{Pozor, výjimka: pokud se přesun souboru provádí v rámci dvou odlišných file systemu, tak se chová jako kopírování!}}
+
+\begin{minted}{shell}
+# mv /usr/local/opt/file.pdf /usr/local/opt/folder/new.pdf
+\end{minted}
+
+Musíme načíst obě cesty k souborům.
+\begin{verbatim}
+read i-node  /
+read content /
+read i-node  /usr
+read content /usr
+read i-node  /usr/local
+read content /usr/local
+read i-node  /usr/local/opt
+read content /usr/local/opt # nutné pro zjištění i-node souboru
+\end{verbatim}
+
+Cílová cesta je pouhé pokračování původní, načteme pouze to, co zatím není v paměti. Content načítat nemusíme, protože ho nepotřebujeme.
+\begin{verbatim}
+read i-node  /usr/local/opt/folder
+\end{verbatim}
+
+Upravíme content cílové složky, protože má nový soubor, a i-node složky kvůli mtime.
+\begin{verbatim}
+write content /usr/local/opt/folder
+write i-node /usr/local/opt/folder
+\end{verbatim}
+
+Upravíme content původní složky, protože přišla o soubor, a i-node složky kvůli mtime.
+\begin{verbatim}
+write content /usr/local/opt
+write i-node /usr/local/opt
+\end{verbatim}
+
+\begin{itemize}
+    \item \textbf{Kolik i-nodů se musí načíst?} 5 
+    (5 složek)
+    \item \textbf{Kolik i-nodů se musí zapsat?} 2
+    (2 upravené složky)
+    \item \textbf{Kolik datových bloků se musí načíst?} 5 
+    (5 složek)
+    \item \textbf{Kolik datových bloků se musí zapsat?} 1
+    \item \textbf{Kolik operací musí být provedeno při alokování/uvolňování bloků a i-nodů? Každou operaci alokace/uvolnění bloku/i-node započtěte zvlášť.} 5183533
+    (5183532 bloků odkazů a dat souboru, 1 i-node souboru)
+\end{itemize}
