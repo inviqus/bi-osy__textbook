@@ -1,0 +1,70 @@
+\section{Deadlock}
+
+\subsection{Příklad 1}
+\subsubsection{Zadání}
+$P_0 ... P_4$ - procesy, co potřebují k dokončení nějaké prostředky. $T_0 ... T_3$ - různé typy prostředků, které využívají procesy. Víme, že celkový počet prostředků, které chtějí procesy, je uveden v následující matici:
+
+$$R(total) = \left[ \begin{array}{ccccc}
+&T_0&T_1&T_2&T_3 \\
+P_0=&1&2&2&4 \\
+P_1=&1&2&3&3 \\ 
+P_2=&0&3&3&3 \\ 
+P_3=&0&2&0&0 \\ 
+P_4=&1&2&0&0
+\end{array} \right]$$
+
+Pokud procesy dostanou vše potřebné, tak se vykonají a uvolní všechny prostředky, co zabírají. Pokud nemají dostatek, tak čekají. Již předělené prostředky uvádí následující matice (pro představu - jsou to uzamknuté mutexy):
+
+$$A(aloc) = \left[ \begin{array}{ccccc}
+&T_0&T_1&T_2&T_3 \\
+P_0=&0&0&1&2 \\ 
+P_1=&0&2&1&2 \\ 
+P_2=&0&0&2&0 \\ 
+P_3=&0&2&0&0 \\ 
+P_4=&1&0&0&0
+\end{array} \right]$$
+
+Aktuálně volné prostředky jsou:
+
+$$F(free) = \left[ \begin{array}{cccc}
+1&0&0&1
+\end{array} \right]$$
+
+
+\subsubsection{Výpočet}
+Cílem je najít takovou sekvenci ukončování procesů, která prostřednictvím postupného uvolnování prostředků dokáže dokončit všechny procesy (pozor, nemusí být nutně pouze jedna). Potřebujeme zjistit, kolik potřebujeme prostředků pro každý proces v aktuální chvíli.
+
+$$
+R - A = N (need) = 
+\left[ \begin{array}{ccccc}
+P_0=&1&2&1&2 \\
+P_1=&1&0&2&1 \\ 
+P_2=&0&3&1&3 \\ 
+P_3=&0&0&0&0 \\ 
+P_4=&0&2&0&0
+\end{array} \right]$$
+
+Vidíme, že $P_3$ potřebuje celkově $\left[ \begin{array}{cccc} 0&2&0&0 \end{array} \right]$a už má přiděleno $\left[ \begin{array}{cccc} 0&2&0&0 \end{array} \right]$, chce 
+navíc $\left[ \begin{array}{cccc} 0&0&0&0 \end{array} \right]$ prostředků, můžeme proces ukončit a k již volným prostředkům přidat prostředky, které uvolní po dokončení.
+
+$$
+\left[ \begin{array}{cccc} 1&0&0&1 \end{array} \right]
+- P_3 (need) + P_3 (total) =
+\left[ \begin{array}{cccc} 1&0&0&1 \end{array} \right]
++ P_3 (aloc) =
+\left[ \begin{array}{cccc} 1&2&0&1 \end{array} \right]
+$$
+
+Po uvolnění $P_3$ máme 
+$\left[ \begin{array}{cccc} 1&2&0&1 \end{array} \right]$ prostředků a díváme se, co dál můžeme ukončit. Jediná možnost je $P_4$.
+
+$$
+\left[ \begin{array}{cccc} 1&2&0&1 \end{array} \right]
++ P_4 (aloc) =
+\left[ \begin{array}{cccc} 2&2&0&1 \end{array} \right]
+$$
+
+S aktuálním množstvím volných prostředků už nemůžeme dokončit žádný proces, at je poskládáme kamkoliv, tak žádný proces nedostane tolik prostředků, kolik je potřeba pro jeho dokončení.
+Jsme v nebezpečném stavu a nemůžeme dokončit procesy $P_0$, $P_1$, $P_2$.
+
+\pagebreak

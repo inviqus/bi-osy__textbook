@@ -1,0 +1,137 @@
+\section{Plánování vláken}
+
+\subsection{Příklad 1}
+\subsubsection{Zadání}
+
+Předpokládejme následující systém:
+\begin{itemize}
+    \item Procesor(y): 1 x Intel® Core™ i5-7360U (počet jader na procesor: 2)
+    \item Počet vláken na jádro: 2 (tedy celkem vláken na procesor: 4)
+    \item Architektura: SMP/UMA (desktop)
+    \item Paměť: 4 GiB DDR3
+\end{itemize}
+
+Na systému je nainstalovaný 64-bitový operační systém, který používá pro plánování uživatelských procesů statickou prioritu (vyšší hodnota znamená vyšší prioritu). Jádro/procesor se přiděluje jednotlivým vláknům maximálně na dobu 20 ms a režii přepínání kontextu zanedbáváme. Dále předpokládáme:
+
+\begin{itemize}
+    \item jádro a ostatní procesy (kromě $P_0, ..., P_3$ ) zatěžují procesor z $20\%$
+    \item plánovač se snaží prodloužit životnost CPU tím, že udržuje rovnoměrnou teplotu všech jader, tedy výpočetní zátěž rovnoměrně rozkládá na jednotlivá jádra
+    \item pro každého běžného uživatele je nastaven limit, který dovolí uživateli spustit maximálně 640 vláken, po dosažení limitu budou funkce vytvářející nová vlákna vracet chybu
+    \item všichni běžní uživatele z následující tabulky spustí své procesy v čase $T_0$
+    \item u každého procesu je uvedena statická priorita, počet vláken, která provádějí výpočet, a celková doba výpočtu (doba výpočtu procesu, pokud by běžel sekvenčně na jednom nezatíženém jádru). Pokud je výpočet v procesu realizován pomocí více vláken na dostatečném počtu jader, pak předpokládáme lineární zrychlení výpočtu, a režii na vytváření a synchronizaci vláken zanedbáme
+\end{itemize}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ l|l|l|l|l }
+        \hline
+        Uživatel & Proces & Priorita & Počet vláken & Celková doba výpoču (sec)\\
+        \hline
+        zahradn & $P_0$ & 90 & 1 & 240\\
+        zahradn & $P_1$ & 60 & 3 & 900\\
+        zahradn & $P_2$ & 60 & 1 & 180\\
+        zdarekj & $P_3$ & 10 & 2 & 600\\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textbf{Za kolik sekund po $T_0$ se ukončí proces $P_2$? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)}
+
+\textbf{Za kolik sekund po $T_0$ se fakticky začne zpracovávat proces $P_3$ ? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)}
+
+\textbf{Za kolik sekund po $T_0$ se ukončí poslední proces? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)}
+
+\subsubsection{Analýza}
+\textbf{Informace ze zadání:}
+\begin{itemize}
+    \item Počet dostupných vláken je $4$.
+    \item Systém je již zatížen na $20\%$. Na konci budeme muset upravit všechny spočítané časy v závislosti na zátěži.
+    \item Všimneme si tabulky procesů, jejich priority, počtu vláken a celkové doby výpočtu. Pozor, doba běhu jednoho procesu je uvedena tak, jako kdyby běžela pouze na jednom vláknu. Použitím více vláken se doba zrychlí.
+\end{itemize}
+
+V průběhu výpočtu nastanou situace, kdy procesy budou mít stejné priority a jejich potřeby z hlediska vláken budou převyšovat aktuálně dostupný počet vláken. Například budou dvě vlákna, první bude potřebovat 3 vlákna, druhé pouze 1. Dostupná budou pouze 3 vlákna. Po výpočet to bude znamenat, že 3 vlákna se budou dělit v poměru $3:1$.
+
+Obecný vzorec pro výpočet bude vypadat následovně:
+$$T_N = T_P/ {{process\ threads} \over {thread\ sum}}/available$$
+
+\begin{itemize}
+    \item $T_P$ je čas, který proces potřebuje, $T_N$ je čas, který ve skutečnosti poběží s daným poměrem a počtem dostupných vláken 
+    \item $process\ threads$ je počet vláken, který daný proces chce
+    \item $thread\ sum$ je součet počtu vláken, které aktuálně chtějí počítat ($3 + 1 = 4$)
+    \item $available$ je počet aktuálně dostupných vláken
+\end{itemize}
+
+\subsubsection{Výpočet}
+Výpočet je založen na postupným přiřazování vláken procesům podle priority. Pokud nějaký proces doběhne, tak "pozastavíme" výpočet, spočítáme již provedenou práci všech paralelně pracujících vláken a pokračujeme s novým přerozdělením vláken.
+
+V čase $T_0$ se spustí $P_0$ (má nejvyšší prioritu) a dostane 1 vlákno (víc nechce). Zbylá tři vlákna se rozdělí mezi $P_1$ a $P_2$.
+
+$P_0$ poběží 240s bez přerušení dokud neskončí. $P_1$ a $P_2$ si musí rozdělit výkon 3 vláken v poměru $3:1$ (počet vláken $P_1$ : počet vláken $P_2$).
+
+Spočítáme teoretickou dobu běhu pro $P_1$ a $P_2$ - s aktuálním rozdělením vláken procesy poběží tuto dobu:
+$$P_1: 900/{3 \over 4}/3=400$$
+$$P_2: 180/{1 \over 4}/3=240$$
+
+$P_2$ poběží stejně dlouho jako $P_0$ a oba procesy v čase $T_0+240$ dokončí práci a uvolní $1+1=2$ vlákna. V tu chvíli pozastaví $P_1$ své výpočty, abychom přerozdělili vlákna.
+
+Musíme spočítat kolik práce již vykonala $P_1$ během prvních $240s$. Vynásobíme dobu běhu bývalým poměrem a počtem volných vláken.
+$$P_1: 240*{3 \over 4}*3 = 540s$$
+
+$P_1$ Během prvních $240s$ se vykonalo prvních $540s$ práce. Zbývá $900-540=360s$ ($340s$ pro \textit{jedno} vlákno).
+
+Jelikož má $P_1$ aktuálně nejvyšší prioritu, tak si zabere všechna 3 potřebná vlákna a bude pokračovat ve výpočtu. Zbylé vlákno dostane čekající $P_3$.
+
+$$P_1: 360/{3 \over 3}/3=120$$
+$$P_3: 600/{2 \over 2}/1=600$$
+
+$P_1$ skončí po $T_0+240+120$, do té doby bude muset $P_3$ pracovat pouze na jednom vláknu. Po doběhnutí $P_1$ musíme opět spočítat kolik práce vykonala $P_3$ a kolik zbývá.
+
+$$P_3: 600 - 120*{2 \over 2}*1 = 600 - 120 = 480s$$
+
+Všechna vlákna jsou volná, přiřadíme potřebný počet $P_3$ (2).
+$$P_3: 480/{2 \over 2}/2 = 240$$
+
+$P_3$ doběhne po $T_0 + 240 + 120 + 240$. Všechny procesy jsou dokončeny.
+
+\textbf{Stručný běh vláken a mezivýsledky:}
+
+\begin{itemize}
+    \item $P_0$ se spustilo rovnou, běželo neustále na jednom vlákně
+    \item $P_1$ a $P_2$ se spustili rovnou a dělili mezi sebou 3 vlákna
+    \item $P_0$ a $P_2$ se dokončily současně na 240sekundě. Dvě vlákna se uvolnily.
+    \item $P_1$ už může běžet na 3 vláknech. Spouští se $P_3$ na jednom vlákně (240s po startu).
+    \item $P_1$ doběhne po dalších 120s (celkově na 360s). $P_3$ ted může běžet na 2 vláknech.
+    \item $P_3$ doběhne po dalších 240s (celkově na 600s).
+\end{itemize}
+
+\begin{itemize}
+    \item $P_1$ a $P_2$ doběhnou po $T_0 + 240$
+    \item $P_1$ doběhne po $T_0 + 240 + 120$
+    \item $P_3$ doběhne po $T_0 + 240 + 120 + 240$
+\end{itemize}
+
+Systém ale není úplně volný, je zatížen jádrem na $20\%$.
+
+Pro všechny časy spočítáme novou hodnotu přes jednoduchou trojčlenku. Příklad výpočtu pro 240s:
+$${x \over 240} = {100 \over {100 - 20}} \Rightarrow x = {24000 \over 80} = 300$$
+
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ l|l|l }
+        \hline
+        Proces & Začátek (s vytížením) & Konec (s vytížením)\\
+        \hline
+        $P_0$ & 0 & 240 (300)\\
+        $P_1$ & 0 & 360 (450)\\
+        $P_2$ & 0 & 240 (300)\\
+        $P_3$ & 240 (300) & 600 (750)\\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textbf{Za kolik sekund po $T_0$ se ukončí proces $P_2$? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)} 300
+
+\textbf{Za kolik sekund po $T_0$ se fakticky začne zpracovávat proces $P_3$ ? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)} 300
+
+\textbf{Za kolik sekund po $T_0$ se ukončí poslední proces? (Výsledek zadejte i s desetinnou částí, je tolerovaná malá odchylka.)} 750
