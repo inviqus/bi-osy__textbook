@@ -1,0 +1,43 @@
+\subsection{RAID 1}
+Předpokládejte následující konfiguraci diskového pole:
+
+\begin{itemize}
+    \item Typ disků: Seagate Savvio 10K.6 (SAS, 6 Gib/s)
+    \item Počet a velikost disků: 22 x 450 GiB
+    \item Rychlost disku: 10000 rpm, 340 MiB/s
+    \item Spolehlivost disků: 1172000 h MTBF
+    \item Typ diskového pole: RAID 1, 1 řadič pracující s rychlostí 1700 MiB/s
+    \item Připojení pole: Ethernet 10GBASE-T (10 Gbit/s) x 1 rozhraní
+\end{itemize}
+
+
+\textbf{Jakou bude mít takové pole kapacitu (v GiB)?}
+
+RAID 1 je jednoduché zrcadlení dvou disků. Kapacita $22*450 = 9900GiB$. Dělíme na dva celky $9900/2 = 4950GiB$.
+
+\textbf{Jakou rychlostí bude v ideálním případě možné z pole sekvenčně číst (v MiB/s)? Odpověď má povolenou toleranci 1\%.}
+
+Rychlost jednoho disku je 340, rychlost řadiče je 1700. Můžeme číst ze dvou jednotek zároven (zrcadlení). Maximální rychlost takového čtení je 340*2 = 680. Takovou rychlost řadič podporuje.
+
+\textbf{Jakou rychlostí bude v ideálním případě možné na pole sekvenčně zapisovat (v MiB/s)? Odpověď má povolenou toleranci 1\%.}
+
+Rychlost zápisu na jeden disk je 340, rychlost řadiče je 1700. Potřebujeme zapisovat na dvě jednotky zároven (zrcadlení), tzn. předávat přes řadič stejnou informaci dvakrát. V tomto případě posílání informace dvakrát znamená posílat 680MiB/s, řadič to podporuje. Unikatní informace je tam ale 2krát mín (opakujeme info pro každý disk), proto rychlost zápisu je 340.
+
+\textbf{Kolik disků může určitě vypadnout, aniž dojde ke ztrátě dat? Uvažujte nejhorší možný scénář výpadků.}
+
+V pesimistickém případě (ze zadání) může vypadnout pouze 1 disk. Kdyby se rozbil druhý z páru, tak už se to nedá obnovit. V optimistickém případě vypadne maximálně půlka všech disků (tzn. 11).
+
+\textbf{Jaká je pravděpodobnost (v procentech), že během 32 měsíců nedojde ke ztrátě dat \\(předpokládáme, že během této doby v poli nic nevyměňujeme)?}
+
+Doba, za kterou chceme měřit, je $32$ měsíců, neboli ${32 \over 12}$ let : ${32 \over 12}$ let $* 365$ dní $* 24$ hodin. MTBF je $1 172 000$. 
+Pro jeden disk vychází $$D = e^{-{{32 \over 12}*365*24 \over 1172000}} =  0.9802655833\%$$
+V RAID 1 musí fungovat alespon 1 disk v páru, aby byl systém funkční.
+Máme dva disky v páru, umocníme na druhou:
+$$P = 1 - (1 - D)^2 = 0.9996105528\%$$
+Máme 11 párů, umocníme na 11:
+$$P^{11} = 0.9957244129\%$$
+\textbf{Kolik sekund bude trvat obnova dat při obnově jednoho disku za předpokladu, že uživatel diskové pole trvale zatěžuje požadavky průměrně 20 MiB/s? Pokud obnova nelze provést, ponechte pole prázdné. Odpověď má povolenou toleranci 1\%.}
+
+Uživatelé zatěžují diskové pole 20MiB/s, zbývá $340-20=320$ na kopírování.
+Obnovení RAID 1 znamená přečíst 450GiB z jednoho a zapsat 450GiB na druhý. Celkový objem dat je 900. Čtu z jednoho a zapisuji na druhý zároven. $320+320 = 640$, to řadič v pohodě zvládne.
+$${{(900 * 1024)MiB} \over 640 MiB\backslash s} = 1440s$$

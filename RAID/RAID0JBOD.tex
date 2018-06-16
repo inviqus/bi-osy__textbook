@@ -1,0 +1,42 @@
+\subsection{RAID 0 - JBOD}
+Předpokládejte následující konfiguraci diskového pole:
+
+\begin{itemize}
+    \item Typ disků: Seagate Barracuda 7200.14 (SAS, 6 Gib/s)
+    \item Počet a velikost disků: 14 x 3000 GiB
+    \item Rychlost disku: 10000 rpm, 80 MiB/s
+    \item Spolehlivost disků: 865000 h MTBF
+    \item Typ diskového pole: RAID JBOD, 1 řadič pracující s rychlostí 400 MiB/s
+    \item Připojení pole: Ethernet 1000BASE-T (1 Gbit/s) x 1 rozhraní
+\end{itemize}
+
+
+\textbf{Jakou bude mít takové pole kapacitu (v GiB)?}
+
+RAID JBOD je jednoduché sériové zapojení. Kapacita $14*3000 = 42000GiB$
+
+\textbf{Jakou rychlostí bude v ideálním případě možné z pole sekvenčně číst (v MiB/s)? Odpověď má povolenou toleranci 1\%.}
+
+Rychlost čtení jednoho disku je 80, rychlost řadiče 400. Vždy čteme z jednoho disku. 80.
+
+\textbf{Jakou rychlostí bude v ideálním případě možné na pole sekvenčně zapisovat (v MiB/s)? Odpověď má povolenou toleranci 1\%.}
+
+Rychlost zápisu jednoho disku je 80, rychlost řadiče 400. Vždy zapisujeme na jeden disk. 80.
+
+\textbf{Kolik disků může určitě vypadnout, aniž dojde ke ztrátě dat? Uvažujte nejhorší možný scénář výpadků.}
+
+Všechny diksy jsou nenahraditelné. 0.
+
+\textbf{Jaká je pravděpodobnost (v procentech), že během 36 měsíců nedojde ke ztrátě dat \\(předpokládáme, že během této doby v poli nic nevyměňujeme)?}
+
+Doba, za kterou chceme měřit, je $36$ měsíců, neboli ${36 \over 12}$ let : ${36 \over 12}$ let $* 365$ dní $* 24$ hodin. MTBF je $865 000$. 
+
+Pro jeden disk vychází: 
+$$D = e^{-{{36 \over 12}*365*24 \over 865000}} =  0.9700753764\%$$
+
+V RAIDu máme 14 disků, umocníme:
+$$D^{14} = 0.6535468612 = 65.35\%$$
+
+\textbf{Kolik sekund bude trvat obnova dat při obnově jednoho disku za předpokladu, že uživatel diskové pole trvale zatěžuje požadavky průměrně 20 MiB/s? Pokud obnova nelze provést, ponechte pole prázdné. Odpověď má povolenou toleranci 1\%.}
+
+Obnovit RAID JBOD nejde.
